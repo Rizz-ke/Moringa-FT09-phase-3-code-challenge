@@ -1,6 +1,5 @@
 from database.setup import create_tables
 from database.connection import get_db_connection
-from models.article import Article
 from models.author import Author
 from models.magazine import Magazine
 
@@ -19,52 +18,35 @@ def main():
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    try:
+        # Create an author
+        cursor.execute('INSERT INTO authors (name) VALUES (?)', (author_name,))
+        author_id = cursor.lastrowid  # Use this to fetch the id of the newly created author
 
-    '''
-        The following is just for testing purposes, 
-        you can modify it to meet the requirements of your implmentation.
-    '''
+        # Create a magazine
+        cursor.execute('INSERT INTO magazines (name, category) VALUES (?,?)', (magazine_name, magazine_category))
+        magazine_id = cursor.lastrowid  # Use this to fetch the id of the newly created magazine
 
-    # Create an author
-    cursor.execute('INSERT INTO authors (name) VALUES (?)', (author_name,))
-    author_id = cursor.lastrowid # Use this to fetch the id of the newly created author
+        # Create an article
+        cursor.execute('INSERT INTO articles (title, content, author_id, magazine_id) VALUES (?, ?, ?, ?)',
+                       (article_title, article_content, author_id, magazine_id))
 
-    # Create a magazine
-    cursor.execute('INSERT INTO magazines (name, category) VALUES (?,?)', (magazine_name, magazine_category))
-    magazine_id = cursor.lastrowid # Use this to fetch the id of the newly created magazine
+        conn.commit()
 
-    # Create an article
-    cursor.execute('INSERT INTO articles (title, content, author_id, magazine_id) VALUES (?, ?, ?, ?)',
-                   (article_title, article_content, author_id, magazine_id))
+        # Query and display results
+        print("\nMagazines:")
+        for magazine in Magazine.fetch_all():
+            print(magazine)
 
-    conn.commit()
+        print("\nAuthors:")
+        for author in Author.fetch_all():
+            print(author)
 
-    # Query the database for inserted records. 
-    # The following fetch functionality should probably be in their respective models
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
-    cursor.execute('SELECT * FROM magazines')
-    magazines = cursor.fetchall()
-
-    cursor.execute('SELECT * FROM authors')
-    authors = cursor.fetchall()
-
-    cursor.execute('SELECT * FROM articles')
-    articles = cursor.fetchall()
-
-    conn.close()
-
-    # Display results
-    print("\nMagazines:")
-    for magazine in magazines:
-        print(Magazine(magazine["id"], magazine["name"], magazine["category"]))
-
-    print("\nAuthors:")
-    for author in authors:
-        print(Author(author["id"], author["name"]))
-
-    print("\nArticles:")
-    for article in articles:
-        print(Article(article["id"], article["title"], article["content"], article["author_id"], article["magazine_id"]))
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
     main()
